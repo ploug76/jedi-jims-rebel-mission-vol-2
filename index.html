@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<title>Jedi Jim's Rebel Mission: Volume 2</title>
+<meta name="description" content="Jedi Jim is back! Lightsaber duels, stormtroopers, a speeder bike chase and Darth Vexis. A free game from Peter's Arcade.">
+<meta property="og:title" content="Jedi Jim's Rebel Mission: Volume 2">
+<meta property="og:description" content="Lightsaber duels, stormtroopers, a speeder bike chase and a Sith lord. Free to play!">
+<meta property="og:image" content="https://ploug76.github.io/jedi-jims-rebel-mission-vol-2/cover.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<canvas id="cv" aria-label="Jedi Jim's Rebel Mission Volume 2"></canvas>
+<div id="hud" hidden>
+ <button id="bMute" class="hb" type="button" aria-label="Mute">🔊</button>
+ <button id="bPause" class="hb" type="button" aria-label="Pause">II</button>
+</div>
+<div id="pad" hidden>
+ <div id="swipeHint">SWIPE &amp; HOLD TO MOVE · SWIPE UP TO JUMP</div>
+ <button id="bForce" class="big" type="button" aria-label="Force push">FORCE</button>
+ <button id="bJump" class="big" type="button" aria-label="Jump">JUMP</button>
+ <button id="bSaber" class="big" type="button" aria-label="Lightsaber">SABER</button>
+</div>
+<div id="ui"></div>
+<div id="crawl" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>window.VERSION='1';</script>
+<script src="game.js?v=1"></script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{})</script>
+</body></html>
