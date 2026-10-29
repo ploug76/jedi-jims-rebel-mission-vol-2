@@ -825,6 +825,7 @@ function render(){c.setTransform(1,0,0,1,0,0);c.fillStyle='#04050a';c.fillRect(0
  c.setTransform(1,0,0,1,0,0);const vg=c.createRadialGradient(cv.width/2,gameH*DPR/2,Math.min(cv.width,gameH*DPR)*0.35,cv.width/2,gameH*DPR/2,Math.max(cv.width,gameH*DPR)*0.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.55)');c.fillStyle=vg;c.fillRect(0,0,cv.width,gameH*DPR);
  if(G.flash&&G.flash.a>0){c.fillStyle=G.flash.c;c.globalAlpha=G.flash.a;c.fillRect(0,0,cv.width,gameH*DPR);c.globalAlpha=1}
  const lb=G.lbv||0;if(lb>0.01){const h=gameH*DPR*0.09*lb;c.fillStyle='#000';c.fillRect(0,0,cv.width,h);c.fillRect(0,gameH*DPR-h,cv.width,h)}
+ drawWorldHint();
  c.restore();
  if(portrait)drawPadPanel();
  drawHUD()}
@@ -834,7 +835,6 @@ function drawPlatScene(){worldT(1);const x0=G.cam.x-200,x1=G.cam.x+viewW+200;
  for(const p of G.plats)if(p.x<x1&&p.x+p.w>x0)drawPlat(p);
  for(const pr of G.props)drawProp(pr);
  for(const cp of G.cps)if(cp.x>x0&&cp.x<x1)drawCP(cp);
- {const h=nearHint(viewW*0.75);if(h)drawHint({...h,y:Math.max(h.y,G.cam.y+70)})}
  drawTies();drawTargets();
  for(const q of G.pickups)if(!q.got&&q.x>x0&&q.x<x1)drawPickup(q);
  for(const e of G.enemies)if(e.x>x0&&e.x<x1)drawEnemy(e);
@@ -859,7 +859,9 @@ function drawBikeScene(){worldT(1);const x0=G.cam.x-200,x1=G.cam.x+viewW+300;
  list.push({y:G.p.y,f:drawBikeJim});if(G.boss)list.push({y:G.boss.y,f:()=>G.boss.draw()});
  list.sort((a,b)=>a.y-b.y);list.forEach(o=>o.f());
  for(const b of G.bolts)drawBolt(b);drawParts();if(G.boss&&G.boss.sayT>0)drawBubble(G.boss);drawTexts();
- {const h=nearHint(900);if(h)drawHint({...h,y:portrait?150:120,x:G.cam.x+viewW/2})}}
+}
+/* on-screen hint bubbles: drawn after all scenery, fg pillars, lights and vignette so nothing covers them */
+function drawWorldHint(){worldT(1);if(G.mode==='bike'){const h=nearHint(900);if(h)drawHint({...h,y:portrait?150:120,x:G.cam.x+viewW/2})}else{const h=nearHint(viewW*0.75);if(h)drawHint({...h,y:Math.max(h.y,G.cam.y+70)})}c.setTransform(1,0,0,1,0,0)}
 function nearHint(r){let best=null,bd=r;for(const h of G.hints){const d=Math.abs(h.x-G.p.x);if(d<bd){bd=d;best=h}}return best}
 function drawObs(o){const k=ds(o.y);if(o.type==='tree'){const w=o.w*k*1.4;const g=c.createLinearGradient(o.x-w/2,0,o.x+w/2,0);g.addColorStop(0,'#1c1208');g.addColorStop(0.35,'#5a3a1c');g.addColorStop(1,'#160e06');c.fillStyle=g;c.fillRect(o.x-w/2,-300,w,o.y+300);
   c.beginPath();c.moveTo(o.x-w/2-14*k,o.y);c.quadraticCurveTo(o.x,o.y-40*k,o.x+w/2+14*k,o.y);c.fill();c.fillStyle='rgba(60,90,40,0.6)';c.fillRect(o.x-w/2,o.y-150*k,w*0.4,60*k);drawShadow(o.x,o.y,w*0.9,6*k)}
