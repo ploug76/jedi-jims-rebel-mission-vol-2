@@ -820,7 +820,7 @@ function drawTargets(){for(const m of G.marks){const a=clamp(m.t/0.6,0,1);c.save
 function lrStep(o,dt,moving,v,stride){if(o._rph===undefined){o._rph=Math.random();o._ramt=0;o._rt=G.t}
  dt=dt===undefined?clamp(G.t-o._rt,0,0.1):dt;o._rt=G.t;
  o._ramt+=((moving?1:0)-o._ramt)*Math.min(1,dt*12);
- if(moving)o._rph=((o._rph+v*dt/stride)%1+1)%1;else if(o._ramt>0.02){const t=o._rph%0.5;o._rph+=(t<0.25?-t:0.5-t)*Math.min(1,dt*10)}
+ if(moving)o._rph=((o._rph+Math.sign(v)*dt*Math.min(1.375,Math.max(Math.abs(v)/stride,Math.min(.875,Math.abs(v)/40))))%1+1)%1;/* cadence (arm check, Oct 30 2026): run capped ~2.75 steps/s, slow walkers ~1.75 */else if(o._ramt>0.02){const t=o._rph%0.5;o._rph+=(t<0.25?-t:0.5-t)*Math.min(1,dt*10)}
  return o._ramt}
 function lrLimb(x,y,a,len,w,fill,line){const ex=x+Math.sin(a)*len,ey=y+Math.cos(a)*len;c.lineCap='round';
  if(line){c.strokeStyle=line;c.lineWidth=w+5;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke()}
@@ -848,13 +848,44 @@ function lrFront(hx,hy,fx,fy,t,amp,d,L){const s=Math.sin(t),lift=Math.max(0,Math
  if(L.sole){c.fillStyle=L.sole;c.fillRect(ax+(fx<hx?-4:4)-L.fl*0.5,ay+L.fh*0.3,L.fl,L.fh*0.2)}}
 function lrBegin(n,x,y,sc,flip,rot){const m=META[n];c.save();c.translate(x,y);if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.scale(sc,sc);c.translate(-m.ax,-m.h);return m}
 function lrBody(n,o){const im=o&&o.tint||IMG[n];if(im)c.drawImage(im,0,0);if(o&&o.flash>0){const wi=tinted(n,'#ffffff',1);if(wi){c.save();c.globalAlpha*=Math.min(1,o.flash/0.12)*0.85;c.drawImage(wi,0,0);c.restore()}}}
+/* ArmRig (arm check, Oct 30 2026; arm-only cut of King Juju's KneeRig): painted single-pose arms re-posed as upper arm + forearm.
+   Pieces are cut from the art as capsules (image px); the hole left behind is back-filled with a darkened copy so nothing shows through.
+   Each arm swings about the shoulder opposite its leg on the stride phase, the elbow bends more on the forward swing; amp 0 = art pose.
+   spec: {arms:[{s:[x,y] shoulder,e:[x,y] elbow,w:[x,y] wrist/fist end,ru,rf radii,o phase offset (0..1),A shoulder swing rad,E elbow bend rad,far}]} */
+const ArmRig=(()=>{const C=new WeakMap(),PI=Math.PI,TAU=PI*2;
+ function cap(x,a,b,r){const g=Math.atan2(b[1]-a[1],b[0]-a[0]);x.moveTo(a[0]+Math.sin(g)*r,a[1]-Math.cos(g)*r);x.arc(b[0],b[1],r,g-PI/2,g+PI/2);x.arc(a[0],a[1],r,g+PI/2,g+PI*1.5);x.closePath()}
+ function cv(W,H){const o=document.createElement('canvas');o.width=W;o.height=H;return o}
+ function piece(im,fn){const o=cv(im.width,im.height),x=o.getContext('2d');x.beginPath();fn(x);x.clip();x.drawImage(im,0,0);return o}
+ function dark(src,W,H,al){const u=cv(W,H),x=u.getContext('2d');x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(40,20,20,'+al+')';x.fillRect(0,0,W,H);return u}
+ function prep(im,R){let P=C.get(R);if(P&&P.im===im)return P;const W=im.width,H=im.height,body=cv(W,H),bx=body.getContext('2d');bx.drawImage(im,0,0);bx.globalCompositeOperation='destination-out';const U=[],ep=R.ep||0.8;
+  const arms=R.arms.map(m=>{const up=piece(im,x=>cap(x,m.s,m.e,m.ru+ep)),fo=piece(im,x=>cap(x,m.e,m.w,m.rf+ep));
+   if(!m.keep){bx.beginPath();cap(bx,m.s,m.e,m.ru+ep);bx.fill();bx.beginPath();cap(bx,m.e,m.w,m.rf+ep);bx.fill()}
+   return{m,up,fo}});
+  /* back-fill each hole that sat over the body by smearing the neighbouring body pixels into it (fu/ff flags per piece), so no ghost arm shows */
+  const snap=cv(W,H);snap.getContext('2d').drawImage(body,0,0);const FC={};
+  /* fill canvas sampling first from direction fd (radians, image space; undefined = all around) */
+  const fill=fd=>{const key=fd===undefined?'all':fd.toFixed(2);if(FC[key])return FC[key];const F=cv(W,H),fx=F.getContext('2d');fx.globalCompositeOperation='destination-over';
+   for(let r=1;r<=(R.fr||22);r+=1.5){if(fd===undefined){for(let k=0;k<16;k++){const t=k/16*TAU;fx.drawImage(snap,-Math.cos(t)*r,-Math.sin(t)*r)}}
+    else for(const dk of [0,-.4,.4,-.8,.8]){const t=fd+dk;fx.drawImage(snap,-Math.cos(t)*r,-Math.sin(t)*r)}}return FC[key]=F};
+  bx.globalCompositeOperation='destination-over';for(const g of arms){const m=g.m;for(const [on,a0,b0,rr,fd] of [[m.fu!==0,m.s,m.e,m.ru,m.fdu],[!!m.ff,m.e,m.w,m.rf,m.fdf]]){if(!on)continue;bx.save();bx.beginPath();cap(bx,a0,b0,rr+ep+0.5);bx.clip();bx.drawImage(fill(fd),0,0);bx.restore()}}
+  bx.globalCompositeOperation='source-over';P={im,body,arms};C.set(R,P);return P}
+ function blit(x,img,p0,px,py,r){x.save();x.translate(px,py);if(r)x.rotate(r);x.translate(-p0[0],-p0[1]);x.drawImage(img,0,0);x.restore()}
+ /* u = stride phase in cycles (0..1, front leg forward at u=.25), amp 0..1; dir: +1 = art faces +x */
+ function draw(x,im,R,u,amp){if(!im||!(im.width||im.naturalWidth))return;const a=Math.max(0,Math.min(1,amp||0));if(a<0.01){x.drawImage(im,0,0);return}
+  const A=a*a*(3-2*a),P=prep(im,R),fs=[],ns=[];for(const g of P.arms){const m=g.m,f=-Math.sin(TAU*(u+(m.o||0))),sa=-(m.A||0.3)*f*A,ea=-(m.E||0.3)*Math.max(0,f)*A+(m.Eb||0.1)*Math.max(0,-f)*A,
+   ex=m.s[0]+(m.e[0]-m.s[0])*Math.cos(sa)-(m.e[1]-m.s[1])*Math.sin(sa),ey=m.s[1]+(m.e[0]-m.s[0])*Math.sin(sa)+(m.e[1]-m.s[1])*Math.cos(sa);(m.far?fs:ns).push([g,ex,ey,sa,sa+ea])}
+  const dr=([g,ex,ey,sa,fa])=>{blit(x,g.fo,g.m.e,ex,ey,fa);blit(x,g.up,g.m.s,g.m.s[0],g.m.s[1],sa)};fs.forEach(dr);x.drawImage(P.body,0,0);ns.forEach(dr)}
+ return{draw,prep}})();
+/* Jedi Jim's painted arms (jim_body art px): front = saber hand (small swing), back = fist; o .5 = opposite each other and the legs */
+const JIM_ARMS={arms:[{s:[136,96],e:[146,124],w:[161,110],ru:9,rf:12,o:0,A:.12,E:.12,fu:0,ff:0},{s:[80,92],e:[70,124],w:[77,148],ru:9,rf:10,o:.5,A:.2,E:.25,fu:1,ff:1,fdu:0,fdf:0}]};
+function jimBody(o,amp,u){if(o&&o.tint){lrBody('jim_body',o);return}ArmRig.draw(c,IMG.jim_body,JIM_ARMS,u,amp);if(o&&o.flash>0){const wi=tinted('jim_body','#ffffff',1);if(wi){c.save();c.globalAlpha*=Math.min(1,o.flash/0.12)*0.85;c.drawImage(wi,0,0);c.restore()}}}
 /* ---- Jedi Jim: boots stride out from under the robe ---- */
 const LR_JIM={th:50,sh:52,wt:30,ws:27,ct:'#3e2b1e',cs:'#5c3b22',cl:'#170d06',cf:'#4f321c',fl:40,fh:17,sole:'#22150c',sw:0.55,kb:1.35};
 const LR_JIMB=Object.assign({},LR_JIM,{ct:'#2e2016',cs:'#43291a',cf:'#3a2414'});
 function drawJimRig(p,x,y,flip,o,amp){if(!IMG.jim_body)return false;const t=p._rph*TAU,bob=-amp*4*Math.abs(Math.cos(t)),lean=amp*0.03*Math.sin(2*t);p.bob=bob;
  lrBegin('jim_body',x,y+bob,JSC,flip);
  lrLeg(70,200,t+Math.PI,amp,1,LR_JIMB);lrLeg(94,202,t,amp,1,LR_JIM);
- c.translate(88,300);c.rotate(lean);c.translate(-88,-300);lrBody('jim_body',o);c.restore();return true}
+ c.translate(88,300);c.rotate(lean);c.translate(-88,-300);jimBody(o,amp,p._rph);c.restore();return true}
 /* ---- troopers (side view, native facing left) ---- */
 function trKnee(dark){return (x,y,a)=>{c.save();c.translate(x,y);c.rotate(-a);c.fillStyle=dark?'#000':'#141414';c.fillRect(-15,-5,30,10);c.fillStyle=dark?'#2a2a34':'#f4f4f0';c.beginPath();c.ellipse(0,-4,12,9,0,0,TAU);c.fill();c.restore()}}
 function trAnkle(dark){return (x,y,a)=>{c.save();c.translate(x,y);c.rotate(-a);c.fillStyle=dark?'#000':'#1a1a1a';c.fillRect(-13,-14,26,5);c.restore()}}
