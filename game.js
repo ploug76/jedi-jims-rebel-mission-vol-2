@@ -226,7 +226,7 @@ function readInput(){let L=K.L||GP.L,R=K.R||GP.R,U=K.U||GP.U,D=K.D||GP.D,sx=0,sy
  if(window.__BOT&&G&&state==='play')botInput()}
 /* ---------- art ---------- */
 const IMG={},META={};const TINT={};
-const ART=['jim_idle','jim_run1','jim_run2','jim_jump','jim_slash','jim_push','jim_bike','jim_face','st_aim','st_walk1','st_walk2','st_fire','st_fly','st_heavy','st_cmd','sith_idle','sith_slash','sith_light','sith_hurt','walker','scout_bike','guard','tie','buck','buck_open','bg_hangar','bg_forest','bg_reactor','bg_throne','cover'];
+const ART=['jim_body','st_body','sth_body','stc_body','sith_body','walker_body','wk_nt','wk_ns','wk_nf','wk_ft','wk_fs','wk_ff','jim_idle','jim_run1','jim_run2','jim_jump','jim_slash','jim_push','jim_bike','jim_face','st_aim','st_walk1','st_walk2','st_fire','st_fly','st_heavy','st_cmd','sith_idle','sith_slash','sith_light','sith_hurt','walker','scout_bike','guard','tie','buck','buck_open','bg_hangar','bg_forest','bg_reactor','bg_throne','cover'];
 function loadArt(){return Promise.all([fetch('art/meta.json').then(r=>r.json()).then(m=>Object.assign(META,m)).catch(()=>{}),...ART.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res()};im.onerror=res;im.src='art/'+n+'.webp?v='+VERSION}))])}
 /* cached tinted/silhouette copies (no ctx.filter: iOS ignores it) */
 function tinted(n,col,a,mode){const k=n+col+a+(mode||'');if(TINT[k])return TINT[k];const im=IMG[n];if(!im)return null;const cc=document.createElement('canvas');cc.width=im.width;cc.height=im.height;const x=cc.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation=mode||'source-atop';x.globalAlpha=a;x.fillStyle=col;x.fillRect(0,0,cc.width,cc.height);return TINT[k]=cc}
@@ -538,7 +538,7 @@ function makeKrell(){const A=G.arena;return bossBase({type:'krell',name:'COMMAND
  reset(){this.hp=Math.min(this.max,this.hp+3);this.st='idle';this.st_t=1.5;this.x=G.arena.x1-220;G.enemies.forEach(e=>{if(!e.dead&&e.st!=='rappel')e.dead=true})},
  draw(){const sc=JSC*1.48;const fr=this.st==='open'||this.st==='stagger'?'st_fly':(this.fireT2>0||this.st==='burst'&&this.st_t<=0)?'st_heavy':'st_heavy';this.fireT2=(this.fireT2||0)-1/60;
   const bob=this.st==='idle'?Math.sin(this.t*6)*1.5:0;const img=null;
-  if(fr==='st_fly'){drawSpr('st_fly',this.x,this.y,sc*0.95,this.face>0,{flash:this.flash,rot:-this.face*0.15,tint:tinted('st_fly','#c02018',0.14)})}else drawSpr('st_cmd',this.x,this.y+bob,sc,this.face>0,{flash:this.flash,tint:img});
+  if(fr==='st_fly'){drawSpr('st_fly',this.x,this.y,sc*0.95,this.face>0,{flash:this.flash,rot:-this.face*0.15,tint:tinted('st_fly','#c02018',0.14)})}else{const mv=Math.abs(this.vx)>10&&!this.dead,amp=lrStep(this,undefined,mv,this.vx*(this.face||1),110);if(!((mv||amp>0.15)&&drawFrontRig(this,'stc_body',this.x,this.y,sc,this.face>0,{flash:this.flash},amp*clamp(Math.abs(this.vx)/90,0.7,1.15),false)))drawSpr('st_cmd',this.x,this.y+bob,sc,this.face>0,{flash:this.flash,tint:img})}
   if(this.st==='burst'&&this.st_t>0){aimLine(this.x+this.face*70,this.y-92,this.face,this.st_t)}
   if(this.st==='charge'&&this.st_t>0){c.globalAlpha=0.5+0.5*Math.sin(G.t*30);glowCircle(this.x,this.y-150,30,'#ff3020');c.globalAlpha=1}}})}
 function aimLine(x,y,face,t){c.save();c.globalCompositeOperation='lighter';c.strokeStyle='rgba(255,40,30,'+(0.25+0.3*Math.sin(G.t*40))+')';c.lineWidth=1.5;c.beginPath();c.moveTo(x,y);c.lineTo(x+face*900,y+10);c.stroke();c.restore()}
@@ -602,7 +602,7 @@ function makeVexis(){const A=G.arena;return bossBase({type:'vexis',name:'DARTH V
  reset(){this.hp=Math.min(this.max,this.hp+4);this.st='stalk';this.st_t=1.5;this.x=G.arena.x1-260;G.thrown.length=0;G.lock=null},
  draw(){const fr=this.fr;const sc=0.385;c.globalAlpha=this.alpha===undefined?1:this.alpha;
   /* red aura */glowCircle(this.x,this.y-80,110,'rgba(255,20,40,'+(0.12+0.05*Math.sin(G.t*3))+')');
-  drawSpr(fr,this.x,this.y,sc,this.face>0,{flash:this.flash});
+  {const mv=fr==='sith_idle'&&Math.abs(this.vx)>10&&!this.dead,amp=lrStep(this,undefined,mv,this.vx*(this.face||1),120);if(!(fr==='sith_idle'&&(mv||amp>0.15)&&drawVexisRig(this,this.x,this.y,sc,this.face>0,{flash:this.flash},amp)))drawSpr(fr,this.x,this.y,sc,this.face>0,{flash:this.flash})}
   const h=this.hand();const ang=this.bladeAng();if(!this.dead)drawBlade(h.x,h.y,ang,86,'#ff1a2a',this.st==='wind'?1.4:1);
   if(this.st==='wind'){c.globalCompositeOperation='lighter';glowCircle(h.x+Math.cos(ang)*86,h.y+Math.sin(ang)*86,20+10*Math.sin(G.t*40),'rgba(255,240,240,0.8)');c.globalCompositeOperation='source-over'}
   if(this.st==='lightning'&&this.zap>0){const lh=this.lhand(),p=G.p;const blocked=p.guard&&p.face===-this.face;const tx=blocked?p.x+p.face*30:p.x,ty=blocked?p.y-100:p.y-60;lightning(lh.x,lh.y,tx,ty)}
@@ -688,7 +688,7 @@ function makeWalker(){const WB=bossBase({type:'walker',name:'AT-ST "IRONSTRIDE"'
  onSaber(){},onPush(){},
  reset(){this.hp=Math.min(this.max,this.hp+2);this.st='idle';this.st_t=1.5},
  draw(){const sc=this.sc();const ph=this.t*1.6*Math.PI;const bob=Math.abs(Math.sin(ph))*6;let rot=0,dy=0;if(this.dead){rot=Math.min(1.2,(this.fall||0)*0.8);dy=Math.min(60,(this.fall||0)*40)}
-  drawShadow(this.x,this.y,90*sc,14*sc);drawSpr('walker',this.x,this.y-bob+dy,sc,false,{flash:this.flash,rot});
+  drawShadow(this.x,this.y,90*sc,14*sc);if(this.dead||!drawWalkerRig(this,this.x,this.y-bob+dy,sc,{flash:this.flash,rot}))drawSpr('walker',this.x,this.y-bob+dy,sc,false,{flash:this.flash,rot});
   if(this.st==='aim'&&this.st_t>0){const mx=this.x-120*sc,my=this.y-250*sc,p=G.p;c.save();c.globalCompositeOperation='lighter';c.strokeStyle='rgba(255,40,30,'+(0.3+0.3*Math.sin(G.t*40))+')';c.lineWidth=2;c.beginPath();c.moveTo(mx,my);c.lineTo(p.x,p.y-p.z-55);c.stroke();c.restore()}
   if(G.waves2)for(const w of G.waves2){c.save();c.globalCompositeOperation='lighter';const g=c.createRadialGradient(w.x,w.y,4,w.x,w.y,70);g.addColorStop(0,'rgba(255,220,150,0.7)');g.addColorStop(1,'rgba(255,120,40,0)');c.fillStyle=g;c.beginPath();c.ellipse(w.x,w.y,70,18,0,0,TAU);c.fill();c.restore();if(Math.random()<0.5)P({x:w.x+rand(-30,30),y:w.y,vx:rand(-60,60),vy:-rand(100,260),l:0.4,m:0.4,s:rand(3,6),c:'#8a7a5a',g:800})}}});
  Object.defineProperty(WB,'x',{get(){return G.cam.x+viewW*this.rel},set(v){},configurable:true});return WB}
@@ -705,7 +705,7 @@ function drawBlade(x,y,a,len,col,boost){boost=boost||1;const ex=x+Math.cos(a)*le
  c.globalAlpha=1;c.strokeStyle='#ffffff';c.lineWidth=3.2;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke();c.restore();
  G.lights.push({x:(x+ex)/2,y:(y+ey)/2,r:120,c:col==='#ff1a2a'?'rgba(255,30,40,0.22)':'rgba(70,150,255,0.24)',l:0.02,m:0.02,frame:1})}
 function lightning(x0,y0,x1,y1){c.save();c.globalCompositeOperation='lighter';for(let k=0;k<3;k++){c.strokeStyle=k?'rgba(190,150,255,0.55)':'rgba(255,255,255,0.95)';c.lineWidth=k?5:2;c.beginPath();c.moveTo(x0,y0);const n=9;for(let i=1;i<n;i++){const t=i/n;c.lineTo(lerp(x0,x1,t)+rand(-14,14),lerp(y0,y1,t)+rand(-18,18))}c.lineTo(x1,y1);c.stroke()}c.restore();G.lights.push({x:(x0+x1)/2,y:(y0+y1)/2,r:200,c:'rgba(170,120,255,0.3)',l:0.02,m:0.02,frame:1})}
-function jimFrame(p){if(p.dead)return'jim_jump';if(p.pushT>0)return'jim_push';if(p.slashT>0||p.lockT>0)return'jim_slash';if(!p.onG)return'jim_jump';if(Math.abs(p.vx)>40&&!p.guard)return Math.floor(p.anim*2.4)%2?'jim_run2':'jim_run1';return'jim_idle'}
+function jimFrame(p){if(p.dead)return'jim_jump';if(p.pushT>0)return'jim_push';if(p.slashT>0||p.lockT>0)return'jim_slash';if(!p.onG)return'jim_jump';if(Math.abs(p.vx)>40&&!p.guard)return IMG.jim_body?'jim_run1':Math.floor(p.anim*2.4)%2?'jim_run2':'jim_run1';return'jim_idle'}
 function drawJim(){const p=G.p;if(p.dead&&p.deadT<1.4)return;const fr=jimFrame(p);p.bob=p.onG&&Math.abs(p.vx)>40?-Math.abs(Math.sin(p.anim*Math.PI*2.4))*3:0;
  if(p.inv>0&&!G.cine&&Math.floor(p.inv*14)%2)c.globalAlpha=0.45;
  drawShadow(p.x,groundAt(p.x,p.y-4)??p.y,26,6);
@@ -713,7 +713,8 @@ function drawJim(){const p=G.p;if(p.dead&&p.deadT<1.4)return;const fr=jimFrame(p
  /* force aura */if(p.pushT>0)glowCircle(p.x,p.y-60,90,'rgba(120,190,255,0.25)');
  const sq=p.landT>0?1-p.landT*0.6:1;
  if(rot){c.save();c.translate(p.x,p.y-55);c.rotate(rot);c.translate(-p.x,-(p.y-55));drawSpr(fr,p.x,p.y,JSC,p.face<0,{flash:p.hurtT>0?p.hurtT:0});c.restore()}
- else drawSpr(fr,p.x,p.y+p.bob,JSC,p.face<0,{flash:p.hurtT>0?p.hurtT:0,sy:sq});
+ else{const mv=fr==='jim_run1'||fr==='jim_run2',amp=lrStep(p,undefined,mv,Math.abs(p.vx),150),useR=(mv||(fr==='jim_idle'&&p.onG&&amp>0.15))&&sq===1;
+  if(!(useR&&drawJimRig(p,p.x,p.y,p.face<0,{flash:p.hurtT>0?p.hurtT:0},amp*clamp(Math.abs(p.vx)/JT.run,0.6,1))))drawSpr(fr,p.x,p.y+p.bob,JSC,p.face<0,{flash:p.hurtT>0?p.hurtT:0,sy:sq})}
  if(!rot){const b=bladeBase(p),a=bladeAngle(p);
   if(p.slashT>0){p.trail.push({x:b.x,y:b.y,a});if(p.trail.length>7)p.trail.shift()}else if(p.trail.length)p.trail.shift();
   if(p.trail.length>1){c.save();c.globalCompositeOperation='lighter';for(let i=1;i<p.trail.length;i++){const t0=p.trail[i-1],t1=p.trail[i];c.globalAlpha=i/p.trail.length*0.35;c.fillStyle='#5ab0ff';c.beginPath();c.moveTo(t0.x+Math.cos(t0.a)*12,t0.y+Math.sin(t0.a)*12);c.lineTo(t0.x+Math.cos(t0.a)*BLADE,t0.y+Math.sin(t0.a)*BLADE);c.lineTo(t1.x+Math.cos(t1.a)*BLADE,t1.y+Math.sin(t1.a)*BLADE);c.lineTo(t1.x+Math.cos(t1.a)*12,t1.y+Math.sin(t1.a)*12);c.fill()}c.restore()}
@@ -727,7 +728,8 @@ function drawEnemy(e){if(e.alpha<=0)return;c.globalAlpha=Math.max(0,e.alpha);con
   if(e.st==='stun'&&!e.dead)stars(e.x,e.y-130);c.globalAlpha=1;return}
  let n='st_aim';if(e.type==='heavy')n='st_heavy';if(e.fireT>0&&e.type!=='heavy')n='st_fire';if(e.dead)n='st_fly';
  const tint=e.type==='shadow'?tinted(n,'#0c0c14',0.8):null;const bob=!e.dead&&Math.abs(e.vx)>10?-Math.abs(Math.sin(e.t*9))*3:0;
- drawSpr(n,e.x,e.y+bob,JSC,flip,{flash:e.flash,rot:e.dead?e.rot*0.25:0,tint});
+ const mv=!e.dead&&!(e.stun>0)&&Math.abs(e.vx)>10,amp=e.dead?0:lrStep(e,undefined,mv,e.vx*(e.face||1),90),useR=!e.dead&&(mv||amp>0.15),ka=amp*clamp(Math.abs(e.vx)/70,0.6,1);
+ if(!(useR&&(n==='st_aim'?drawTrooperRig(e,e.x,e.y,flip,{flash:e.flash},ka):n==='st_heavy'?drawFrontRig(e,'sth_body',e.x,e.y,JSC,flip,{flash:e.flash},ka,false):false)))drawSpr(n,e.x,e.y+bob,JSC,flip,{flash:e.flash,rot:e.dead?e.rot*0.25:0,tint});
  if(e.type==='shadow'&&!e.dead){c.save();c.globalCompositeOperation='lighter';glowCircle(e.x+e.face*8,e.y-100,8,'rgba(255,40,40,0.8)');c.restore()}
  if(e.aimT>0&&!e.dead){aimLine(e.x+e.face*44,e.y-72,e.face,e.aimT)}
  if(e.stun>0&&!e.dead&&e.type==='heavy')stars(e.x,e.y-120);
@@ -812,6 +814,88 @@ function drawBeams(){for(const b of G.beams){const ph=(G.t+b.ph)%b.per,on=ph<b.o
  if(on||warn){c.save();c.globalCompositeOperation='lighter';c.globalAlpha=on?0.9:0.25+0.25*Math.sin(G.t*40);const g=c.createLinearGradient(b.x-18,0,b.x+18,0);g.addColorStop(0,'rgba(80,160,255,0)');g.addColorStop(0.5,'rgba(200,240,255,1)');g.addColorStop(1,'rgba(80,160,255,0)');c.fillStyle=g;c.fillRect(b.x-18+(on?Math.random()*2:0),b.y0,36,b.y1-b.y0);c.restore();if(on)G.lights.push({x:b.x,y:300,r:160,c:'rgba(90,170,255,0.25)',l:0.02,m:0.02,frame:1})}}}
 function drawTies(){for(const t of G.ties){if(t.ph===0){worldT(0.25);drawSpr('tie',t.bx,t.by,0.12,false,{alpha:0.9})}else{worldT(1);drawSpr('tie',t.x,t.y,t.sc,false,{rot:t.rot||0});c.save();c.globalCompositeOperation='lighter';glowCircle(t.x,t.y-60*t.sc*3,30,'rgba(255,80,40,0.25)');c.restore()}}worldT(1)}
 function drawTargets(){for(const m of G.marks){const a=clamp(m.t/0.6,0,1);c.save();c.globalCompositeOperation='lighter';c.strokeStyle='rgba(255,60,40,'+(0.5+0.5*Math.sin(G.t*30))+')';c.lineWidth=3;c.beginPath();c.ellipse(m.x,m.y,40*(1.2-a*0.4),10,0,0,TAU);c.stroke();c.restore()}}
+
+/* ===== leg rig (Grey Heart leg check, Oct 2026): render-only procedural legs under legless body art =====
+   Stride phase advances from horizontal speed, legs ease back to standing when stopped. Sprite-pixel coords. */
+function lrStep(o,dt,moving,v,stride){if(o._rph===undefined){o._rph=Math.random();o._ramt=0;o._rt=G.t}
+ dt=dt===undefined?clamp(G.t-o._rt,0,0.1):dt;o._rt=G.t;
+ o._ramt+=((moving?1:0)-o._ramt)*Math.min(1,dt*12);
+ if(moving)o._rph=((o._rph+v*dt/stride)%1+1)%1;else if(o._ramt>0.02){const t=o._rph%0.5;o._rph+=(t<0.25?-t:0.5-t)*Math.min(1,dt*10)}
+ return o._ramt}
+function lrLimb(x,y,a,len,w,fill,line){const ex=x+Math.sin(a)*len,ey=y+Math.cos(a)*len;c.lineCap='round';
+ if(line){c.strokeStyle=line;c.lineWidth=w+5;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke()}
+ c.strokeStyle=fill;c.lineWidth=w;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke();return[ex,ey]}
+/* side-view leg. d=+1 if the sprite faces right natively. L={th,sh,wt,ws,ct,cs,cl,sw,kb,fl,fh,cf,knee,ankle} */
+function lrLeg(hx,hy,t,amp,d,L){const s=Math.sin(t),cs=Math.cos(t);
+ const th=0.04+amp*(L.sw||0.5)*s,kn=0.06+amp*((L.kb||1.3)*Math.pow(Math.max(0,cs),1.3)+0.14*Math.max(0,-cs));
+ const k=lrLimb(hx,hy,d*th,L.th,L.wt,L.ct,L.cl);const sa=th-kn;
+ const a=lrLimb(k[0],k[1],d*sa,L.sh,L.ws,L.cs,L.cl);
+ if(L.knee)L.knee(k[0],k[1],d*th,d*sa);
+ const fa=amp*0.45*Math.max(0,cs);c.save();c.translate(a[0],a[1]);c.scale(d,1);c.rotate(fa);
+ c.fillStyle=L.cl||'#000';c.beginPath();c.ellipse(L.fl*0.28,L.fh*0.15,L.fl*0.62,L.fh*0.62,0,0,TAU);c.fill();
+ c.fillStyle=L.cf;c.beginPath();c.ellipse(L.fl*0.28,0,L.fl*0.55,L.fh*0.5,0,0,TAU);c.fill();
+ if(L.sole){c.fillStyle=L.sole;c.fillRect(-L.fl*0.25,L.fh*0.32,L.fl*1.05,L.fh*0.22)}
+ c.restore();if(L.ankle)L.ankle(a[0],a[1],d*sa)}
+/* front-view (facing camera) march leg: foot slides with the step and lifts, knee pushes up */
+function lrFront(hx,hy,fx,fy,t,amp,d,L){const s=Math.sin(t),lift=Math.max(0,Math.cos(t));
+ const ax=fx+d*amp*L.sx*s,ay=fy-amp*L.lift*lift,kx=(hx+ax)/2+d*amp*L.sx*0.35*s,ky=(hy+ay)/2-amp*L.lift*0.25*lift;
+ c.lineCap='round';c.lineJoin='round';
+ for(const [w,col] of [[L.wt+5,L.cl],[L.wt,L.ct]]){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(hx,hy);c.lineTo(kx,ky);c.stroke()}
+ for(const [w,col] of [[L.ws+5,L.cl],[L.ws,L.cs]]){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(kx,ky);c.lineTo(ax,ay);c.stroke()}
+ if(L.knee)L.knee(kx,ky,Math.atan2(ax-kx,ay-ky));
+ c.fillStyle=L.cl;c.beginPath();c.ellipse(ax+(fx<hx?-4:4),ay+3,L.fl*0.6,L.fh*0.62,0,0,TAU);c.fill();
+ c.fillStyle=L.cf;c.beginPath();c.ellipse(ax+(fx<hx?-4:4),ay+1,L.fl*0.52,L.fh*0.5,0,0,TAU);c.fill();
+ if(L.sole){c.fillStyle=L.sole;c.fillRect(ax+(fx<hx?-4:4)-L.fl*0.5,ay+L.fh*0.3,L.fl,L.fh*0.2)}}
+function lrBegin(n,x,y,sc,flip,rot){const m=META[n];c.save();c.translate(x,y);if(rot)c.rotate(rot);if(flip)c.scale(-1,1);c.scale(sc,sc);c.translate(-m.ax,-m.h);return m}
+function lrBody(n,o){const im=o&&o.tint||IMG[n];if(im)c.drawImage(im,0,0);if(o&&o.flash>0){const wi=tinted(n,'#ffffff',1);if(wi){c.save();c.globalAlpha*=Math.min(1,o.flash/0.12)*0.85;c.drawImage(wi,0,0);c.restore()}}}
+/* ---- Jedi Jim: boots stride out from under the robe ---- */
+const LR_JIM={th:50,sh:52,wt:30,ws:27,ct:'#3e2b1e',cs:'#5c3b22',cl:'#170d06',cf:'#4f321c',fl:40,fh:17,sole:'#22150c',sw:0.55,kb:1.35};
+const LR_JIMB=Object.assign({},LR_JIM,{ct:'#2e2016',cs:'#43291a',cf:'#3a2414'});
+function drawJimRig(p,x,y,flip,o,amp){if(!IMG.jim_body)return false;const t=p._rph*TAU,bob=-amp*4*Math.abs(Math.cos(t)),lean=amp*0.03*Math.sin(2*t);p.bob=bob;
+ lrBegin('jim_body',x,y+bob,JSC,flip);
+ lrLeg(70,200,t+Math.PI,amp,1,LR_JIMB);lrLeg(94,202,t,amp,1,LR_JIM);
+ c.translate(88,300);c.rotate(lean);c.translate(-88,-300);lrBody('jim_body',o);c.restore();return true}
+/* ---- troopers (side view, native facing left) ---- */
+function trKnee(dark){return (x,y,a)=>{c.save();c.translate(x,y);c.rotate(-a);c.fillStyle=dark?'#000':'#141414';c.fillRect(-15,-5,30,10);c.fillStyle=dark?'#2a2a34':'#f4f4f0';c.beginPath();c.ellipse(0,-4,12,9,0,0,TAU);c.fill();c.restore()}}
+function trAnkle(dark){return (x,y,a)=>{c.save();c.translate(x,y);c.rotate(-a);c.fillStyle=dark?'#000':'#1a1a1a';c.fillRect(-13,-14,26,5);c.restore()}}
+function trLegs(dark){const W=dark?'#262630':'#ecebe5',Wb=dark?'#1a1a22':'#c9c8c1',Lc=dark?'#050508':'#2a2a2a';
+ return [{th:58,sh:60,wt:30,ws:26,ct:Wb,cs:Wb,cl:Lc,cf:Wb,fl:42,fh:15,sole:Lc,sw:0.5,kb:1.25,knee:trKnee(dark),ankle:trAnkle(dark)},
+         {th:58,sh:60,wt:32,ws:28,ct:W,cs:W,cl:Lc,cf:W,fl:44,fh:16,sole:Lc,sw:0.5,kb:1.25,knee:trKnee(dark),ankle:trAnkle(dark)}]}
+const LR_TR=trLegs(false),LR_TRD=trLegs(true);
+function drawTrooperRig(e,x,y,flip,o,amp){if(!IMG.st_body)return false;const t=e._rph*TAU,bob=amp*4*Math.cos(2*t),dark=e.type==='shadow',L=dark?LR_TRD:LR_TR;
+ lrBegin('st_body',x,y+bob,JSC,flip);
+ lrLeg(124,150,t+Math.PI,amp,-1,L[0]);lrLeg(98,152,t,amp,-1,L[1]);
+ lrBody('st_body',{flash:o.flash,tint:dark?tinted('st_body','#0c0c14',0.8):null});c.restore();return true}
+/* ---- heavy troopers + Commander Krell (front-facing armor): marching legs ---- */
+function frKnee(x,y){c.fillStyle='#141414';c.beginPath();c.ellipse(x,y,17,13,0,0,TAU);c.fill();c.fillStyle='#f2f2ee';c.beginPath();c.ellipse(x,y-3,13,10,0,0,TAU);c.fill()}
+const LR_FR={wt:30,ws:26,ct:'#ecebe5',cs:'#e4e3dd',cl:'#2a2a2a',cf:'#ecebe5',fl:46,fh:18,sole:'#2a2a2a',sx:14,lift:26,knee:frKnee};
+const LR_FRD=Object.assign({},LR_FR,{ct:'#262630',cs:'#22222a',cl:'#050508',cf:'#262630',knee:(x,y)=>{c.fillStyle='#000';c.beginPath();c.ellipse(x,y,15,12,0,0,TAU);c.fill()}});
+function drawFrontRig(o,n,x,y,sc,flip,opt,amp,dark){if(!IMG[n])return false;const t=o._rph*TAU,bob=amp*4*Math.abs(Math.cos(t)),L=dark?LR_FRD:LR_FR;
+ lrBegin(n,x,y-bob,sc,flip);
+ lrFront(64,150,40,282,t,amp,-1,L);lrFront(100,150,134,282,t+Math.PI,amp,-1,L);
+ lrBody(n,opt);c.restore();return true}
+/* ---- Darth Vexis (front-facing, long cape): armored legs march under the cape ---- */
+const LR_SITH={wt:21,ws:19,ct:'#2a2024',cs:'#231a1e',cl:'#070405',cf:'#100b0d',fl:44,fh:16,sole:'#000',sx:14,lift:24,knee:(x,y)=>{c.fillStyle='#120a0d';c.beginPath();c.ellipse(x,y,9,8,0,0,TAU);c.fill();c.fillStyle='#b0142a';c.fillRect(x-6,y-1,12,2)}};
+function drawVexisRig(b,x,y,sc,flip,opt,amp){if(!IMG.sith_body)return false;const t=b._rph*TAU,bob=amp*3*Math.abs(Math.cos(t));
+ lrBegin('sith_body',x,y-bob,sc,flip);
+ lrFront(152,240,154,334,t+Math.PI,amp,-1,LR_SITH);lrFront(104,240,100,336,t,amp,-1,LR_SITH);
+ lrBody('sith_body',opt);c.restore();return true}
+/* ---- AT-ST walker: its own leg art cut into thigh/shin/foot pieces, posed by 2-bone IK; cadence locked to the stomp sound ---- */
+const WK={n:{H:[175,150],K:[237,197],A:[210,293],t:'wk_nt',s:'wk_ns',f:'wk_nf'},f:{H:[122,180],K:[143,202],A:[110,292],t:'wk_ft',s:'wk_fs',f:'wk_ff'}};
+function wkPiece(n,px,py,ox,oy,rot){const im=IMG[n];if(!im)return;c.save();c.translate(px,py);c.rotate(rot);c.translate(-ox,-oy);c.drawImage(im,0,0);c.restore()}
+function wkLeg(L,t,amp){const s=Math.sin(t),lift=Math.max(0,Math.cos(t)),H=L.H,K=L.K,A=L.A;
+ const L1=Math.hypot(K[0]-H[0],K[1]-H[1]),L2=Math.hypot(A[0]-K[0],A[1]-K[1]);
+ const tx=A[0]+amp*22*s,ty=A[1]-amp*24*Math.pow(lift,1.2);
+ const dx=tx-H[0],dy=ty-H[1],D=Math.min(L1+L2-0.5,Math.hypot(dx,dy)),base=Math.atan2(dy,dx),cA=Math.acos(clamp((L1*L1+D*D-L2*L2)/(2*L1*D),-1,1));
+ const side=((K[0]-H[0])*(A[1]-H[1])-(K[1]-H[1])*(A[0]-H[0]))>0?-1:1;
+ const ka=base+side*cA,kx=H[0]+Math.cos(ka)*L1,ky=H[1]+Math.sin(ka)*L1,ex=H[0]+Math.cos(base)*D,ey=H[1]+Math.sin(base)*D;
+ const r1=ka-Math.atan2(K[1]-H[1],K[0]-H[0]),r2=Math.atan2(ey-ky,ex-kx)-Math.atan2(A[1]-K[1],A[0]-K[0]);
+ return {draw(){wkPiece(L.t,H[0],H[1],H[0],H[1],r1);wkPiece(L.s,kx,ky,K[0],K[1],r2);wkPiece(L.f,ex,ey,A[0],A[1],amp*0.12*lift*(s>0?-1:1))}}}
+function drawWalkerRig(w,x,y,sc,opt){if(!IMG.walker_body||!IMG.wk_nt)return false;const t=w.t*0.8*TAU,amp=1;
+ lrBegin('walker_body',x,y,sc,false,opt.rot);
+ wkLeg(WK.f,t+Math.PI,amp).draw();const near=wkLeg(WK.n,t,amp);
+ c.save();c.translate(WK.n.H[0],WK.n.H[1]);c.restore();
+ near.draw();lrBody('walker_body',opt);c.restore();return true}
 
 /* ===== scene composition, HUD ===== */
 function render(){c.setTransform(1,0,0,1,0,0);c.fillStyle='#04050a';c.fillRect(0,0,cv.width,cv.height);
