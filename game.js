@@ -979,7 +979,9 @@ function rr2(x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c
 /* ---------- title background ---------- */
 let titleT=0;const embers=[];
 function renderTitleBg(){titleT+=1/60;const im=IMG.cover;c.setTransform(1,0,0,1,0,0);
- if(im){const s=Math.max(cv.width/im.width,cv.height/im.height)*(1.06+Math.sin(titleT*0.2)*0.03);const fx=portrait?0.62:0.5;c.drawImage(im,(cv.width-im.width*s)*fx,(cv.height-im.height*s)*0.4,im.width*s,im.height*s)}
+ if(im){const z=1.06+Math.sin(titleT*0.2)*0.03;/* Oct 30: menu never covers Jim: portrait = art in the top band (menu below), landscape = Jim on the right (menu on the left) */
+ if(portrait&&state==='title'){c.fillStyle='#04050a';c.fillRect(0,0,cv.width,cv.height);const s=cv.height*0.56/im.height*z;c.drawImage(im,cv.width*0.5-im.width*s*0.64,-im.height*s*0.03,im.width*s,im.height*s);const f=c.createLinearGradient(0,cv.height*0.40,0,cv.height*0.56);f.addColorStop(0,'rgba(4,5,10,0)');f.addColorStop(1,'rgba(4,5,10,1)');c.fillStyle=f;c.fillRect(0,cv.height*0.40,cv.width,cv.height*0.6)}
+ else{const s=Math.max(cv.width/im.width,cv.height/im.height)*z;const fx=portrait?0.62:(state==='title'?0.02:0.5);c.drawImage(im,(cv.width-im.width*s)*fx,(cv.height-im.height*s)*0.4,im.width*s,im.height*s)}}
  const g=c.createLinearGradient(0,0,0,cv.height);g.addColorStop(0,'rgba(0,0,0,0.35)');g.addColorStop(0.5,'rgba(0,0,0,0.05)');g.addColorStop(1,'rgba(0,0,0,0.75)');c.fillStyle=g;c.fillRect(0,0,cv.width,cv.height);
  if(embers.length<70)embers.push({x:Math.random()*W,y:H+10,vy:-rand(30,90),vx:rand(-15,15),s:rand(1,3),l:rand(3,7)});c.save();c.globalCompositeOperation='lighter';for(const e of embers){e.x+=e.vx/60;e.y+=e.vy/60;e.l-=1/60;c.fillStyle='rgba(255,160,70,'+clamp(e.l/3,0,0.8)+')';c.beginPath();c.arc(e.x*DPR,e.y*DPR,e.s*DPR,0,TAU);c.fill()}c.restore();for(let i=embers.length-1;i>=0;i--)if(embers[i].l<=0)embers.splice(i,1)}
 
@@ -1017,7 +1019,7 @@ function shareGame(){try{navigator.share({title:"Jedi Jim's Rebel Mission: Volum
 let toastT=null;function toast(s){const t=$('toast');t.textContent=s;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
 function tip(s,t){if(!G)return;G.tip=s;G.tipT=t||3.2}
 /* ----- opening crawl ----- */
-function startCrawl(){state='crawl';hideUI();setHud(false);AU.play('title');const el=$('crawl');el.hidden=false;el.innerHTML='<div class="cr-hint">Tap to skip</div><div class="cr-wrap"><div class="cr"><p class="cr-t">VOLUME 2<br>RETURN OF THE LIGHT RING</p>'+
+function startCrawl(){state='crawl';hideUI();setHud(false);AU.play('title');if(window.SkipBtn)SkipBtn.show(endCrawl,{while:()=>state==='crawl'});const el=$('crawl');el.hidden=false;el.innerHTML='<div class="cr-hint">Tap to skip</div><div class="cr-wrap"><div class="cr"><p class="cr-t">VOLUME 2<br>RETURN OF THE LIGHT RING</p>'+
  '<p>Not so long ago, in a galaxy right next door, brave Jedi Jim rebuilt the glowing LIGHT RING and saved the Rebellion.</p><p>But the evil DARTH VEXIS has stolen the Ring! The Empire plans to use its power to fire a terrible new weapon from their battle station.</p><p>With his trusty lightsaber, a big smile and a whole lot of courage, Jim sneaks aboard a giant Star Destroyer to get it back....</p></div></div>';
  G=null;crawlT=0;crawlTimer=setTimeout(endCrawl,24000)}
 let crawlT=0,crawlTimer=null;
