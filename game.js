@@ -175,15 +175,17 @@ function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2)
 function layoutPad(){const pad=$('pad'),bs=$('bSaber'),bf=$('bForce'),bj=$('bJump'),hint=$('swipeHint');if(!pad)return;
  if(portrait){const top=gameH,ph=H-top;pad.style.top=top+'px';pad.style.height=ph+'px';
   const big=Math.round(clamp(ph*0.42,96,126)),sm=Math.round(big*0.78);
-  bs.style.width=bs.style.height=big+'px';bs.style.right='16px';bs.style.bottom=Math.round(clamp(ph*0.12,16,40))+'px';
-  bj.style.width=bj.style.height=sm+'px';bj.style.right=(16+big*0.18)+'px';bj.style.bottom=(parseInt(bs.style.bottom)+big+12)+'px';
-  bf.style.width=bf.style.height=sm+'px';bf.style.right=(16+big+14)+'px';bf.style.bottom=(parseInt(bs.style.bottom)+big*0.35)+'px';
-  if(parseInt(bj.style.bottom)+sm>ph-6){bj.style.bottom=(ph-sm-6)+'px'}
-  hint.style.display='';hint.style.top='10px';hint.style.left='12px';hint.style.right=(16+big+sm+30)+'px'}
+  /* Oct 30: JUMP bottom-right; SABER bottom-left with FORCE beside it (mirrored, same size) */
+  const bot=Math.round(clamp(ph*0.12,16,40));for(const e of [bs,bf,bj]){e.style.left='';e.style.right=''}
+  bj.style.width=bj.style.height=big+'px';bj.style.right='16px';bj.style.bottom=bot+'px';
+  bs.style.width=bs.style.height=big+'px';bs.style.left='16px';bs.style.bottom=bot+'px';
+  bf.style.width=bf.style.height=sm+'px';bf.style.left=(16+big+14)+'px';bf.style.bottom=(bot+big*0.35)+'px';
+  hint.style.display='';hint.style.top='10px';hint.style.left='12px';hint.style.right='12px'}
  else{pad.style.top='0';pad.style.height=H+'px';const big=Math.round(clamp(H*0.22,74,96)),sm=Math.round(big*0.76);
-  bs.style.width=bs.style.height=big+'px';bs.style.right='14px';bs.style.bottom='14px';
-  bj.style.width=bj.style.height=sm+'px';bj.style.right=(14+big*0.12)+'px';bj.style.bottom=(14+big+10)+'px';
-  bf.style.width=bf.style.height=sm+'px';bf.style.right=(14+big+12)+'px';bf.style.bottom='18px';
+  for(const e of [bs,bf,bj]){e.style.left='';e.style.right=''}
+  bj.style.width=bj.style.height=big+'px';bj.style.right='14px';bj.style.bottom='14px';
+  bs.style.width=bs.style.height=big+'px';bs.style.left='14px';bs.style.bottom='14px';
+  bf.style.width=bf.style.height=sm+'px';bf.style.left=(14+big+12)+'px';bf.style.bottom='18px';
   hint.style.display='none'}}
 addEventListener('resize',()=>{resize()});
 /* ---------- input ---------- */
@@ -255,6 +257,8 @@ function moveBody(o,dt,opt){opt=opt||{};const px=o.x,py=o.y;o.vy=Math.min(o.vy+G
  if(!opt.drop&&o.vy>=0){for(const p of G.plats){if(o.x+o.w/2*0.6>p.x&&o.x-o.w/2*0.6<p.x+p.w&&py<=p.y+2+(p.dy>0?p.dy:0)&&o.y>=p.y){o.y=p.y;o.vy=0;o.onG=true;o.gnd=p;if(p.mover)o.ride=p}}}
  return was}
 function groundAt(x,feetY){let best=null;const all=G.solids.concat(G.plats);for(const s of all){if(s.dead)continue;if(x>=s.x&&x<=s.x+s.w&&s.y>=(feetY===undefined?-999:feetY-4)){if(best===null||s.y<best)best=s.y}}return best}
+/* respawn fix (Oct 30): blinking pit falls are free; respawn backs up ~1.5 body widths from the edge */
+function rfBack(s,fx){const ok=x=>solidUnder(x-22,s.y)&&solidUnder(x+22,s.y),d=Math.sign(fx-s.x)||1;let k=0;while(k<600&&ok(s.x+d*(k+4)))k+=4;const need=56;if(k>=need)return s.x;for(let n=need-k;n>0;n-=4)if(ok(s.x-d*n))return s.x-d*n;return s.x}
 function solidUnder(x,y){for(const s of G.solids)if(!s.dead&&x>=s.x&&x<=s.x+s.w&&y>=s.y-4&&y<=s.y+30)return true;for(const p of G.plats)if(x>=p.x&&x<=p.x+p.w&&Math.abs(y-p.y)<6)return true;return false}
 /* seeded rng for level gen */
 function rng(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
@@ -382,7 +386,7 @@ function stepPlayer(dt){const p=G.p;if(p.dead){p.deadT-=dt;if(p.deadT<=0)respawn
  if(p.onG&&!was&&p.vy>=0){p.landT=0.12;AU.fx('land');dustPuff(p.x,p.y,5)}
  if(p.ride){p.x+=p.ride.dx||0}
  /* pits */
- if(p.y>VH+160){if(!(window.__GOD&&!G.godOff)){p.hp-=1;AU.fx('hurt')}if(p.hp<=0){playerDie();p.y=VH+100;return}p.x=p.safe.x;p.y=p.safe.y;p.vx=p.vy=0;p.inv=1.4;txt(p.x,p.y-130,'-1','#ff7a6a');ring(p.x,p.y-50,'#7fd0ff',60)}
+ if(p.y>VH+160){const rfx=rfBack(p.safe,p.x);if(p.inv>0){p.x=rfx;p.y=p.safe.y;p.vx=p.vy=0;p.inv=Math.max(p.inv,1);return}if(!(window.__GOD&&!G.godOff)){p.hp-=1;AU.fx('hurt')}if(p.hp<=0){playerDie();p.y=VH+100;return}p.x=rfx;p.y=p.safe.y;p.vx=p.vy=0;p.inv=1.4;txt(p.x,p.y-130,'-1','#ff7a6a');ring(p.x,p.y-50,'#7fd0ff',60)}
  if(p.onG&&!p.ride&&solidUnder(p.x-22,p.y)&&solidUnder(p.x+22,p.y)){p.safeT+=dt;if(p.safeT>0.25){p.safe={x:p.x,y:p.y};p.safeT=0}}
  /* keep in arena / level */
  const lo=G.arena&&G.arena.on?G.arena.x0+20:-250;if(p.x<lo){p.x=lo;p.vx=Math.max(0,p.vx)}
