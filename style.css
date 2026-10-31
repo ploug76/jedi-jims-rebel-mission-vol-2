@@ -5,9 +5,10 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:blo
 .hb{width:48px;height:48px;border-radius:14px;border:2px solid #7fc0ff88;background:#04102099;color:#fff;font:bold 18px system-ui;backdrop-filter:blur(4px)}
 #pad{position:fixed;left:0;right:0;z-index:4;pointer-events:auto;touch-action:none}
 #pad .big{position:absolute;border-radius:50%;font:900 15px "Trebuchet MS",system-ui;letter-spacing:1px;color:#fff;border:3px solid #ffffffaa;text-shadow:0 2px 3px #000a;touch-action:none;opacity:.9}
-#bSaber{background:radial-gradient(circle at 35% 30%,#bfe8ff,#2a8cff 55%,#0a2a70);box-shadow:0 0 26px #3a9cff,inset 0 -6px 12px #0006;font-size:17px!important}
+#bSaber{background:radial-gradient(circle at 35% 30%,#d8ffd0,#38b040 55%,#0a5a12);box-shadow:0 0 18px #50d06099,inset 0 -6px 12px #0006}
 #bForce{background:radial-gradient(circle at 35% 30%,#e0d0ff,#7a4aff 55%,#2a0a70);box-shadow:0 0 20px #8a5aff99,inset 0 -6px 12px #0006}
-#bJump{background:radial-gradient(circle at 35% 30%,#d8ffe8,#20b070 55%,#04502a);box-shadow:0 0 18px #30d08099,inset 0 -6px 12px #0006}
+#bJump{background:radial-gradient(circle at 35% 30%,#ffe0b0,#ff8a1a 55%,#a03a00);box-shadow:0 0 22px #ff9a3a99,inset 0 -6px 12px #0006}
+#bJump,#bSaber{border:3px solid #fff!important;opacity:1!important;letter-spacing:0!important;font-family:system-ui,sans-serif!important;font-weight:900!important;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 2px 0 #000,0 -2px 0 #000,2px 0 0 #000,-2px 0 0 #000!important;padding:0}
 #pad .big.on{transform:scale(.92);filter:brightness(1.35)}
 #swipeHint{position:absolute;font:800 14px system-ui;letter-spacing:1.5px;color:#cfe6ffcc;text-shadow:0 1px 3px #000;line-height:1.4;pointer-events:none}
 #ui{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;align-items:center;justify-content:center}

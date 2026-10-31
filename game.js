@@ -173,20 +173,19 @@ function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2)
  else{VV=540;S=H/VV;gameTop=0;gameH=H}
  viewW=W/S;layoutPad()}
 function layoutPad(){const pad=$('pad'),bs=$('bSaber'),bf=$('bForce'),bj=$('bJump'),hint=$('swipeHint');if(!pad)return;
+ /* Oct 30 9:45 PM (Peter's reference): JUMP big orange bottom-right corner, SABER smaller green just left of it and a bit higher, FORCE small to the left of SABER */
+ const R=v=>'calc('+Math.round(v)+'px + env(safe-area-inset-right,0px))',Bt=v=>'calc('+Math.round(v)+'px + env(safe-area-inset-bottom,0px))';
+ for(const e of [bs,bf,bj]){e.style.left='';e.style.right='';e.style.top=''}
+ let big,sm,f,jr,jb,or,ob,gap;
  if(portrait){const top=gameH,ph=H-top;pad.style.top=top+'px';pad.style.height=ph+'px';
-  const big=Math.round(clamp(ph*0.42,96,126)),sm=Math.round(big*0.78);
-  /* Oct 30: JUMP bottom-right; SABER bottom-left with FORCE beside it (mirrored, same size) */
-  const bot=Math.round(clamp(ph*0.12,16,40));for(const e of [bs,bf,bj]){e.style.left='';e.style.right=''}
-  bj.style.width=bj.style.height=big+'px';bj.style.right='16px';bj.style.bottom=bot+'px';
-  bs.style.width=bs.style.height=big+'px';bs.style.left='16px';bs.style.bottom=bot+'px';
-  bf.style.width=bf.style.height=sm+'px';bf.style.left=(16+big+14)+'px';bf.style.bottom=(bot+big*0.35)+'px';
+  big=Math.round(clamp(ph*0.36,92,124));sm=Math.round(big*0.84);const bot=clamp(ph*0.14,18,46);jr=16;jb=bot;or=16+big+14;ob=bot+big*0.42;if(ob+sm>ph-8)ob=ph-sm-8;gap=10;
   hint.style.display='';hint.style.top='10px';hint.style.left='12px';hint.style.right='12px'}
- else{pad.style.top='0';pad.style.height=H+'px';const big=Math.round(clamp(H*0.22,74,96)),sm=Math.round(big*0.76);
-  for(const e of [bs,bf,bj]){e.style.left='';e.style.right=''}
-  bj.style.width=bj.style.height=big+'px';bj.style.right='14px';bj.style.bottom='14px';
-  bs.style.width=bs.style.height=big+'px';bs.style.left='14px';bs.style.bottom='14px';
-  bf.style.width=bf.style.height=sm+'px';bf.style.left=(14+big+12)+'px';bf.style.bottom='18px';
-  hint.style.display='none'}}
+ else{pad.style.top='0';pad.style.height=H+'px';big=Math.round(clamp(H*0.21,72,96));sm=Math.round(big*0.82);jr=14;jb=12;or=14+big+10;ob=12+big*0.18;gap=10;
+  hint.style.display='none'}
+ f=Math.round(sm*0.7);
+ bj.style.width=bj.style.height=big+'px';bj.style.right=R(jr);bj.style.bottom=Bt(jb);bj.style.setProperty('font-size',Math.round(big*0.30)+'px','important');
+ bs.style.width=bs.style.height=sm+'px';bs.style.right=R(or);bs.style.bottom=Bt(ob);bs.style.setProperty('font-size',Math.round(big*0.24)+'px','important');
+ bf.style.width=bf.style.height=f+'px';bf.style.right=R(or+sm+gap);bf.style.bottom=Bt(ob+sm/2-f/2);bf.style.setProperty('font-size',Math.round(f*0.24)+'px','important')}
 addEventListener('resize',()=>{resize()});
 /* ---------- input ---------- */
 const K={L:0,R:0,U:0,D:0,J:0,S:0,F:0};const VIRT={jump:0,saber:0,force:0},VIRTP={jump:0,saber:0,force:0},KP={J:0,S:0,F:0};let kbNav=0;const TOUCH=new Map();let swipeJump=0;
