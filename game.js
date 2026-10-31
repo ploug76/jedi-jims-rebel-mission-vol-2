@@ -228,7 +228,7 @@ function readInput(){let L=K.L||GP.L,R=K.R||GP.R,U=K.U||GP.U,D=K.D||GP.D,sx=0,sy
  if(window.__BOT&&G&&state==='play')botInput()}
 /* ---------- art ---------- */
 const IMG={},META={};const TINT={};
-const ART=['jim_body','st_body','sth_body','stc_body','sith_body','walker_body','wk_nt','wk_ns','wk_nf','wk_ft','wk_fs','wk_ff','jim_idle','jim_run1','jim_run2','jim_jump','jim_slash','jim_push','jim_bike','jim_face','st_aim','st_walk1','st_walk2','st_fire','st_fly','st_heavy','st_cmd','sith_idle','sith_slash','sith_light','sith_hurt','walker','scout_bike','guard','tie','buck','buck_open','bg_hangar','bg_forest','bg_reactor','bg_throne','cover'];
+const ART=['jim_body','st_body','stc_side','sth_side','sth_body','stc_body','sith_body','walker_body','wk_nt','wk_ns','wk_nf','wk_ft','wk_fs','wk_ff','jim_idle','jim_run1','jim_run2','jim_jump','jim_slash','jim_push','jim_bike','jim_face','st_aim','st_walk1','st_walk2','st_fire','st_fly','st_heavy','st_cmd','sith_idle','sith_slash','sith_light','sith_hurt','walker','scout_bike','guard','tie','buck','buck_open','bg_hangar','bg_forest','bg_reactor','bg_throne','cover'];
 function loadArt(){return Promise.all([fetch('art/meta.json').then(r=>r.json()).then(m=>Object.assign(META,m)).catch(()=>{}),...ART.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res()};im.onerror=res;im.src='art/'+n+'.webp?v='+VERSION}))])}
 /* cached tinted/silhouette copies (no ctx.filter: iOS ignores it) */
 function tinted(n,col,a,mode){const k=n+col+a+(mode||'');if(TINT[k])return TINT[k];const im=IMG[n];if(!im)return null;const cc=document.createElement('canvas');cc.width=im.width;cc.height=im.height;const x=cc.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation=mode||'source-atop';x.globalAlpha=a;x.fillStyle=col;x.fillRect(0,0,cc.width,cc.height);return TINT[k]=cc}
@@ -542,7 +542,7 @@ function makeKrell(){const A=G.arena;return bossBase({type:'krell',name:'COMMAND
  reset(){this.hp=Math.min(this.max,this.hp+3);this.st='idle';this.st_t=1.5;this.x=G.arena.x1-220;G.enemies.forEach(e=>{if(!e.dead&&e.st!=='rappel')e.dead=true})},
  draw(){const sc=JSC*1.48;const fr=this.st==='open'||this.st==='stagger'?'st_fly':(this.fireT2>0||this.st==='burst'&&this.st_t<=0)?'st_heavy':'st_heavy';this.fireT2=(this.fireT2||0)-1/60;
   const bob=this.st==='idle'?Math.sin(this.t*6)*1.5:0;const img=null;
-  if(fr==='st_fly'){drawSpr('st_fly',this.x,this.y,sc*0.95,this.face>0,{flash:this.flash,rot:-this.face*0.15,tint:tinted('st_fly','#c02018',0.14)})}else{const mv=Math.abs(this.vx)>10&&!this.dead,amp=lrStep(this,undefined,mv,this.vx*(this.face||1),110);if(!((mv||amp>0.15)&&drawFrontRig(this,'stc_body',this.x,this.y,sc,this.face>0,{flash:this.flash},amp*clamp(Math.abs(this.vx)/90,0.7,1.15),false)))drawSpr('st_cmd',this.x,this.y+bob,sc,this.face>0,{flash:this.flash,tint:img})}
+  if(fr==='st_fly'){drawSpr('st_fly',this.x,this.y,sc*0.95,this.face>0,{flash:this.flash,rot:-this.face*0.15,tint:tinted('st_fly','#c02018',0.14)})}else{const mv=Math.abs(this.vx)>10&&!this.dead,amp=lrStep(this,undefined,mv,this.vx*(this.face||1),110);if(!((mv||amp>0.15)&&(IMG.stc_side?drawTrooperRig(this,this.x,this.y,this.face>0,{flash:this.flash},amp*clamp(Math.abs(this.vx)/90,0.7,1.15),'stc_side',sc):drawFrontRig(this,'stc_body',this.x,this.y,sc,this.face>0,{flash:this.flash},amp*clamp(Math.abs(this.vx)/90,0.7,1.15),false))))drawSpr('st_cmd',this.x,this.y+bob,sc,this.face>0,{flash:this.flash,tint:img})}
   if(this.st==='burst'&&this.st_t>0){aimLine(this.x+this.face*70,this.y-92,this.face,this.st_t)}
   if(this.st==='charge'&&this.st_t>0){c.globalAlpha=0.5+0.5*Math.sin(G.t*30);glowCircle(this.x,this.y-150,30,'#ff3020');c.globalAlpha=1}}})}
 function aimLine(x,y,face,t){c.save();c.globalCompositeOperation='lighter';c.strokeStyle='rgba(255,40,30,'+(0.25+0.3*Math.sin(G.t*40))+')';c.lineWidth=1.5;c.beginPath();c.moveTo(x,y);c.lineTo(x+face*900,y+10);c.stroke();c.restore()}
@@ -733,7 +733,7 @@ function drawEnemy(e){if(e.alpha<=0)return;c.globalAlpha=Math.max(0,e.alpha);con
  let n='st_aim';if(e.type==='heavy')n='st_heavy';if(e.fireT>0&&e.type!=='heavy')n='st_fire';if(e.dead)n='st_fly';
  const tint=e.type==='shadow'?tinted(n,'#0c0c14',0.8):null;const bob=!e.dead&&Math.abs(e.vx)>10?-Math.abs(Math.sin(e.t*9))*3:0;
  const mv=!e.dead&&!(e.stun>0)&&Math.abs(e.vx)>10,amp=e.dead?0:lrStep(e,undefined,mv,e.vx*(e.face||1),90),useR=!e.dead&&(mv||amp>0.15),ka=amp*clamp(Math.abs(e.vx)/70,0.6,1);
- if(!(useR&&(n==='st_aim'?drawTrooperRig(e,e.x,e.y,flip,{flash:e.flash},ka):n==='st_heavy'?drawFrontRig(e,'sth_body',e.x,e.y,JSC,flip,{flash:e.flash},ka,false):false)))drawSpr(n,e.x,e.y+bob,JSC,flip,{flash:e.flash,rot:e.dead?e.rot*0.25:0,tint});
+ if(!(useR&&(n==='st_aim'?drawTrooperRig(e,e.x,e.y,flip,{flash:e.flash},ka):n==='st_heavy'?(IMG.sth_side?drawTrooperRig(e,e.x,e.y,flip,{flash:e.flash},ka,'sth_side'):drawFrontRig(e,'sth_body',e.x,e.y,JSC,flip,{flash:e.flash},ka,false)):false)))drawSpr(n,e.x,e.y+bob,JSC,flip,{flash:e.flash,rot:e.dead?e.rot*0.25:0,tint});
  if(e.type==='shadow'&&!e.dead){c.save();c.globalCompositeOperation='lighter';glowCircle(e.x+e.face*8,e.y-100,8,'rgba(255,40,40,0.8)');c.restore()}
  if(e.aimT>0&&!e.dead){aimLine(e.x+e.face*44,e.y-72,e.face,e.aimT)}
  if(e.stun>0&&!e.dead&&e.type==='heavy')stars(e.x,e.y-120);
@@ -897,10 +897,10 @@ function trLegs(dark){const W=dark?'#262630':'#ecebe5',Wb=dark?'#1a1a22':'#c9c8c
  return [{th:58,sh:60,wt:30,ws:26,ct:Wb,cs:Wb,cl:Lc,cf:Wb,fl:42,fh:15,sole:Lc,sw:0.5,kb:1.25,knee:trKnee(dark),ankle:trAnkle(dark)},
          {th:58,sh:60,wt:32,ws:28,ct:W,cs:W,cl:Lc,cf:W,fl:44,fh:16,sole:Lc,sw:0.5,kb:1.25,knee:trKnee(dark),ankle:trAnkle(dark)}]}
 const LR_TR=trLegs(false),LR_TRD=trLegs(true);
-function drawTrooperRig(e,x,y,flip,o,amp){if(!IMG.st_body)return false;const t=e._rph*TAU,bob=amp*4*Math.cos(2*t),dark=e.type==='shadow',L=dark?LR_TRD:LR_TR;
- lrBegin('st_body',x,y+bob,JSC,flip);
+function drawTrooperRig(e,x,y,flip,o,amp,bn,sc){bn=bn||'st_body';if(!IMG[bn])return false;const t=e._rph*TAU,bob=amp*4*Math.cos(2*t),dark=e.type==='shadow',L=dark?LR_TRD:LR_TR;
+ lrBegin(bn,x,y+bob,sc||JSC,flip);
  lrLeg(124,150,t+Math.PI,amp,-1,L[0]);lrLeg(98,152,t,amp,-1,L[1]);
- lrBody('st_body',{flash:o.flash,tint:dark?tinted('st_body','#0c0c14',0.8):null});c.restore();return true}
+ lrBody(bn,{flash:o.flash,tint:dark?tinted(bn,'#0c0c14',0.8):null});c.restore();return true}
 /* ---- heavy troopers + Commander Krell (front-facing armor): marching legs ---- */
 function frKnee(x,y){c.fillStyle='#141414';c.beginPath();c.ellipse(x,y,17,13,0,0,TAU);c.fill();c.fillStyle='#f2f2ee';c.beginPath();c.ellipse(x,y-3,13,10,0,0,TAU);c.fill()}
 const LR_FR={wt:30,ws:26,ct:'#ecebe5',cs:'#e4e3dd',cl:'#2a2a2a',cf:'#ecebe5',fl:46,fh:18,sole:'#2a2a2a',sx:14,lift:26,knee:frKnee};
