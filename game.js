@@ -168,25 +168,32 @@ const SAVE_KEY='jjrm2_save';let save={};try{save=JSON.parse(localStorage.getItem
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
 AU.muted=!!save.muted;
 let W=0,H=0,DPR=1,S=1,VV=540,viewW=800,gameTop=0,gameH=540,portrait=false;
-function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);portrait=H>W*1.1;
+/* Peter Oct 31 9:12 PM: iPhone cutoff fix - use the VISIBLE viewport (visualViewport / clientHeight), re-check often */
+function viewWH(){const vv=window.visualViewport,de=document.documentElement;let w=innerWidth||de.clientWidth,h=innerHeight||de.clientHeight;
+ if(de.clientHeight>0)h=Math.min(h,de.clientHeight);if(vv&&vv.scale>0.99&&vv.scale<1.01){w=Math.min(w,vv.width)||w;h=Math.min(h,vv.height)||h}return[Math.max(1,Math.round(w)),Math.max(1,Math.round(h))]}
+function resize(){[W,H]=viewWH();DPR=Math.min(devicePixelRatio||1,2);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);portrait=H>W*1.1;
  if(portrait){const vw=clamp(W*1.06,400,480);S=W/vw;gameTop=0;gameH=Math.round(H*0.64);VV=gameH/S}
  else{VV=540;S=H/VV;gameTop=0;gameH=H}
  viewW=W/S;layoutPad()}
 function layoutPad(){const pad=$('pad'),bs=$('bSaber'),bf=$('bForce'),bj=$('bJump'),hint=$('swipeHint');if(!pad)return;
- /* Oct 30 9:45 PM (Peter's reference): JUMP big orange bottom-right corner, SABER smaller green just left of it and a bit higher, FORCE small to the left of SABER */
+ /* Peter Oct 31 9:12 PM: 3 buttons -> N64-style diamond at bottom right, all the same smaller size.
+    Bottom slot left empty: FORCE left, SABER top, JUMP right (thumb spot). Inside safe areas. */
  const R=v=>'calc('+Math.round(v)+'px + env(safe-area-inset-right,0px))',Bt=v=>'calc('+Math.round(v)+'px + env(safe-area-inset-bottom,0px))';
  for(const e of [bs,bf,bj]){e.style.left='';e.style.right='';e.style.top=''}
- let big,sm,f,jr,jb,or,ob,gap;
+ let d,mr,mb;
  if(portrait){const top=gameH,ph=H-top;pad.style.top=top+'px';pad.style.height=ph+'px';
-  big=Math.round(clamp(ph*0.36,92,124));sm=Math.round(big*0.84);const bot=clamp(ph*0.14,18,46);jr=16;jb=bot;or=16+big+14;ob=bot+big*0.42;if(ob+sm>ph-8)ob=ph-sm-8;gap=10;
+  d=Math.round(clamp(Math.min(W*0.165,ph*0.24),54,70));mr=14;mb=Math.round(clamp(ph*0.08,14,30));
   hint.style.display='';hint.style.top='10px';hint.style.left='12px';hint.style.right='12px'}
- else{pad.style.top='0';pad.style.height=H+'px';big=Math.round(clamp(H*0.21,72,96));sm=Math.round(big*0.82);jr=14;jb=12;or=14+big+10;ob=12+big*0.18;gap=10;
+ else{pad.style.top='0';pad.style.height=H+'px';d=Math.round(clamp(H*0.15,48,62));mr=12;mb=10;
   hint.style.display='none'}
- f=Math.round(sm*0.7);
- bj.style.width=bj.style.height=big+'px';bj.style.right=R(jr);bj.style.bottom=Bt(jb);bj.style.setProperty('font-size',Math.round(big*0.30)+'px','important');
- bs.style.width=bs.style.height=sm+'px';bs.style.right=R(or);bs.style.bottom=Bt(ob);bs.style.setProperty('font-size',Math.round(big*0.24)+'px','important');
- bf.style.width=bf.style.height=f+'px';bf.style.right=R(or+sm+gap);bf.style.bottom=Bt(ob+sm/2-f/2);bf.style.setProperty('font-size',Math.round(f*0.24)+'px','important')}
+ const off=Math.ceil((d+8)/1.414);
+ const put=(e,r,b,fs)=>{e.style.width=e.style.height=d+'px';e.style.right=R(r);e.style.bottom=Bt(b);e.style.setProperty('font-size',Math.round(d*fs)+'px','important')};
+ put(bj,mr,mb,0.24);            // right
+ put(bs,mr+off,mb+off,0.2);     // top
+ put(bf,mr+2*off,mb,0.2)}       // left
 addEventListener('resize',()=>{resize()});
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>{resize()});addEventListener('orientationchange',()=>{setTimeout(resize,120);setTimeout(resize,500)});addEventListener('pageshow',()=>resize());addEventListener('load',()=>{setTimeout(resize,100);setTimeout(resize,600);setTimeout(resize,1500)});
+setInterval(()=>{const [w,h]=viewWH();if(w!==W||h!==H)resize()},400);
 /* ---------- input ---------- */
 const K={L:0,R:0,U:0,D:0,J:0,S:0,F:0};const VIRT={jump:0,saber:0,force:0},VIRTP={jump:0,saber:0,force:0},KP={J:0,S:0,F:0};let kbNav=0;const TOUCH=new Map();let swipeJump=0;
 const inp={L:0,R:0,U:0,D:0,sx:0,sy:0,jumpP:0,jump:0,saberP:0,saber:0,saberR:0,forceP:0,force:0};let lastJ=0,lastS=0,lastF=0;let mashCount=0;
